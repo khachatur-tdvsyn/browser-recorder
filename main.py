@@ -1,6 +1,11 @@
-import time
 from browser import RecordableFirefoxBrowser
 
-recordable = RecordableFirefoxBrowser("https://wikipedia.org", ["onclick"], record_input="events_output.json")
-recordable.execute_record()
-# recordable.start_recording()
+record = False
+url = "https://google.com"
+
+if record:
+    recordable = RecordableFirefoxBrowser(url, ["onclick", "onmousedown", "onmouseup"], record_output="events_output.json")
+    recordable.start_recording()
+else:
+    replayable = RecordableFirefoxBrowser(url, record_input="events_output.json")
+    replayable.execute_record()

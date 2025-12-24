@@ -92,7 +92,7 @@ class RecordableFirefoxBrowser(RecordableBrowser):
                 for e in events:
                     print(e.get('time'), ':', e.get('type'))
 
-                time.sleep(0.25)
+                time.sleep(0.125)
             except NoSuchWindowException:
                 print("Window closed. Stop recording")
                 break
@@ -110,7 +110,11 @@ class RecordableFirefoxBrowser(RecordableBrowser):
             execution_record = json.load(f)
         
         actions = ActionFactory.create_action(self.browser, execution_record)
+        
+        start = time.time()
+        print('Starting execution of recorded events...')
         for a in actions:
             a.execute()
         
-        print('Executed successfully. Closed program')
+        end = time.time()
+        print(f'Execution finished in {end - start:.3f} seconds.')
