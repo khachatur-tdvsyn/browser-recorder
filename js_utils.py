@@ -15,11 +15,10 @@ var getCssSelectorShort = (el) => {
         `${tag}:nth-child(${1+[].indexOf.call(siblings, el)})`
       )
     );
-    if(el.id)
-        break;
+
     el = parent;
   };
-  return `${path.join(' > ')}`.toLowerCase();
+  return `${path.join(' > ')}`
 };
 
 function record(type, e) {
