@@ -85,8 +85,8 @@ class RecordableFirefoxBrowser(RecordableBrowser):
                     print('Re-execute script')
                     self.browser.execute_script(self.js_payload)
                     self.title = self.browser.title
-
-                events = self.browser.execute_script(EVENT_LIST_PAYLOAD)
+            
+                events = self.browser.execute_script(EVENT_LIST_PAYLOAD) or []
                 self.record_buffer += events
 
                 for e in events:
