@@ -52,3 +52,4 @@ htmlcov/
 
 # JSON output files (if not needed in repo)
 events_output.json
+TODO*
