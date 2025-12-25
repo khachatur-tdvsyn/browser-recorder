@@ -6,11 +6,12 @@ from pathlib import Path
 from typing import Optional
 
 from selenium import webdriver
+from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.firefox.options import Options
 from selenium.common.exceptions import NoSuchWindowException, InvalidSessionIdException
 
-from js_utils import get_event_recorder_payload, EVENT_LIST_PAYLOAD
-from action import ActionFactory
+from js_utils import get_event_recorder_payload, EVENT_LIST_PAYLOAD, GET_CSS_SELECTOR_PAYLOAD
+from actions import ActionFactory
 
 
 class RecordableBrowser(ABC):
@@ -66,9 +67,11 @@ class RecordableFirefoxBrowser(RecordableBrowser):
         if(self.start_url):
             self.browser.get(self.start_url)
 
+
     def save_output(self):
         if self.record_output:
             with open(self.record_output, "w+") as f:
+                print(self.record_buffer)
                 json.dump(self.record_buffer, f)
         else:
             print(self.record_buffer)
