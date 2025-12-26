@@ -8,12 +8,7 @@ from js_utils import DRAG_DROP_PAYLOAD
 
 class ClickAction(BaseAction):
     def execute(self):
-        wait = WebDriverWait(self.driver, 10)
-        el = wait.until(
-            lambda driver: driver.find_element(
-                by=By.CSS_SELECTOR, value=self.params["target"]
-            )
-        )
+        el = self._get_element(self.params["target"])
 
         print("Clicking on", self.params["target"])
         try:
@@ -25,12 +20,7 @@ class ClickAction(BaseAction):
 
 class DoubleClickAction(BaseAction):
     def execute(self):
-        wait = WebDriverWait(self.driver, 10)
-        el = wait.until(
-            lambda driver: driver.find_element(
-                by=By.CSS_SELECTOR, value=self.params["target"]
-            )
-        )
+        el = self._get_element(self.params["target"])
 
         print("Double clicking on", self.params["target"])
         try:
@@ -43,15 +33,9 @@ class DoubleClickAction(BaseAction):
 
 class MouseDownAction(MouseBaseAction):
     def execute(self):
-
-        wait = WebDriverWait(self.driver, 10)
-        wait.until(
-            lambda d: d.find_element(by=By.CSS_SELECTOR, value=self.params["target"])
-        )
-
-        action = ActionChains(self.driver)
+        super().execute()
+        el = self._get_element(self.params["target"])
         print("Executing MouseDownAction on", self.params["target"])
-
         action = self._create_move_action()
 
         # Mouse button: 0 = left, 1 = middle, 2 = right
@@ -66,6 +50,7 @@ class MouseDownAction(MouseBaseAction):
 
 class MouseUpAction(MouseBaseAction):
     def execute(self):
+        super().execute()
         print(self.get_mouse_position())
         action = self._create_move_action()
 
@@ -77,6 +62,7 @@ class MouseUpAction(MouseBaseAction):
 
 class MouseMoveAction(MouseBaseAction):
     def execute(self):
+        super().execute()
         print(
             "Executing MouseMoveAction at",
             self.params["event"]["clientX"],
@@ -111,19 +97,8 @@ class DropAction(BaseAction):
         self.driver.execute_script(DRAG_DROP_PAYLOAD)
 
     def execute(self):
-        wait = WebDriverWait(self.driver, 10)
-        el = wait.until(
-            lambda driver: driver.find_element(
-                by=By.CSS_SELECTOR, value=self.params[0]["target"]
-            )
-        )
-
-        wait = WebDriverWait(self.driver, 10)
-        next_el = wait.until(
-            lambda driver: driver.find_element(
-                by=By.CSS_SELECTOR, value=self.params[1]["target"]
-            )
-        )
+        el = self._get_element(self.params[0]["target"])
+        next_el = self._get_element(self.params[1]["target"])
 
         print("Dragging element", self.params[0]["target"])
         print("Dropping on element", self.params[1]["target"])

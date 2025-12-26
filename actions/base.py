@@ -4,6 +4,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
+from selenium.webdriver.remote.webelement import WebElement
 from selenium.common.exceptions import (
     ElementNotInteractableException,
     StaleElementReferenceException
@@ -19,6 +20,16 @@ class BaseAction(ABC):
     @abstractmethod
     def execute(self): ...
 
+    def _get_element(self, target, timeout=10) -> WebElement:
+        wait = WebDriverWait(self.driver, timeout)
+        el = wait.until(
+            lambda d: d.find_element(
+                by=By.CSS_SELECTOR, value=target
+            )
+        )
+        print("Found element:", target, self.params.get("parentIframes")[-1:])
+        return el
+
     def __str__(self):
         return self.params
 
@@ -30,10 +41,10 @@ class UnknownAction(BaseAction):
     def execute(self):
         print(f"Executing unknown action of type: {self.params['type']} (doing nothing)")
 
-class MouseBaseAction(BaseAction):
+class MouseBaseAction(BaseAction, ABC):
     def __init__(self, driver, params):
         super().__init__(driver, params)
-        self.html = self.driver.find_element(by=By.TAG_NAME, value="html")
+        self.html = self._get_element("html")
 
         # Temporary install mouse tracker
         self.driver.execute_script(
@@ -60,19 +71,13 @@ class MouseBaseAction(BaseAction):
         )
 
     def get_mouse_position(self):
-        return self.driver.execute_script(
-            """
-            return window.__mousePos
-                ? { x: window.__mousePos.x, y: window.__mousePos.y }
-                : null;
-        """
-        )
+        return self.driver.execute_script("""return window.__mousePos""")
 
     def _refresh_html_element(self):
         try:
             self.html.is_enabled()
         except StaleElementReferenceException:
-            self.html = self.driver.find_element(by=By.TAG_NAME, value="html")
+            self.html = self._get_element('html')
 
     def _create_move_action(self):
         action = ActionChains(self.driver)
