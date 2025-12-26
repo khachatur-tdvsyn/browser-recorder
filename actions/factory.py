@@ -14,6 +14,12 @@ from .keyboard import (
     KeyUpAction
 )
 
+from .clipboard import (
+    CutAction,
+    CopyAction,
+    PasteAction
+)
+
 class ActionFactory:
     avaiable_actions = {
         "onclick": ClickAction,
@@ -24,8 +30,13 @@ class ActionFactory:
         "onwheel": WheelAction,
         "ondragstart": DragAction,
         "ondrop": DropAction,
+
         "onkeydown": KeyDownAction,
         "onkeyup": KeyUpAction,
+
+        "oncut": CutAction,
+        "oncopy": CopyAction,
+        "onpaste": PasteAction,
     }
 
     keep_params_actions = {
