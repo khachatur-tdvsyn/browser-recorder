@@ -10,7 +10,12 @@ from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.firefox.options import Options
 from selenium.common.exceptions import NoSuchWindowException, InvalidSessionIdException
 
-from js_utils import get_event_recorder_payload, EVENT_LIST_PAYLOAD, GET_CSS_SELECTOR_PAYLOAD
+from js_utils import  (
+    EVENT_LIST_PAYLOAD, 
+    EVENT_LISTENER_INJECTED_PAYLOAD,
+    GET_CSS_SELECTOR_PAYLOAD,
+    get_event_recorder_payload,
+)
 from actions import ActionFactory
 
 
@@ -88,9 +93,12 @@ class RecordableFirefoxBrowser(RecordableBrowser):
                     print('Re-execute script')
                     self.browser.execute_script(self.js_payload)
                     self.title = self.browser.title
+                elif not self.browser.execute_script(EVENT_LISTENER_INJECTED_PAYLOAD):
+                    print('Re-inject event listeners')
+                    self.browser.execute_script(self.js_payload)
             
-                events = self.browser.execute_script(EVENT_LIST_PAYLOAD) or []
-                self.record_buffer += events
+                events = self.browser.execute_script(EVENT_LIST_PAYLOAD)
+                self.record_buffer += events or []
 
                 for e in events:
                     print(e.get('time'), ':', e.get('type'))

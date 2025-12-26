@@ -45,12 +45,12 @@ function htmlSelectorSanitize(ob){
         continue;
       }
 
-      console.log('Sanitizing key', k, ob[k]);
+      // console.log('Sanitizing key', k, ob[k]);
       if(ob[k] === null || ob[k] === undefined)
         x[k] = ob[k];
       else if(typeof ob[k] === 'object' && (ob[k].tagName || ob[k].nodeName))
         x[k] = window.__getCssSelectorShort(ob[k]);
-      else if(Array.isArray(ob[k]) || (typeof ob[k] === 'object' && ob[k] !== null && !(ob[k] instanceof Window))){
+      else if(Array.isArray(ob[k]) || (typeof ob[k] === 'object' && ob[k] !== null && !(ob[k] instanceof Window || ob[k].self))){
         x[k] = htmlSelectorSanitize(ob[k])
       }
       else if(typeof ob[k] !== 'function')
@@ -59,25 +59,52 @@ function htmlSelectorSanitize(ob){
     return x;
 }
 
-function record(type, e) {
+function record(type, e, parentIframes = []) {
     let ob = {}
     Object.keys(e.__proto__).forEach(k => {
         ob[k] = e[k]
-    })
-    console.log('Sanitizing event', type, e, ob);
+    })       
+    
+    console.log('Sanitizing event', e, ob);
     let y = htmlSelectorSanitize(ob);
     window.__userEvents.push({
         type, 
         event: y, 
         target: window.__getCssSelectorShort(e.target),
+        parentIframes,
         time: Date.now(),
     });
 }
 
+function injectIframeListeners(key, parentIframes = []){
+  //If parentIframe is not provided, start from document
+  let iframes = null
+  if(!parentIframes || parentIframes.length === 0)
+    iframes = document.getElementsByTagName('iframe');
+  else
+    iframes = parentIframes.at(-1).getElementsByTagName('iframe');
+
+    for (let i = 0; i < iframes.length; i++) {
+        try {
+            iframes[i].contentWindow.addEventListener(key.slice(2), e => {
+                newIframes = [
+                    ...parentIframes, 
+                    window.__getCssSelectorShort(iframes[i])
+                ];
+                record(key, e, newIframes);
+                injectIframeListeners(key, newIframes);
+            })
+        } catch (err) {
+            console.error('Could not attach event listener to iframe:', key, iframes[i], err);
+        }
+    }
+}
+
 ///EVENTS///.forEach(key => {
     window.addEventListener(key.slice(2), e => {
-            record(key, e);
+        record(key, e);
     })
+    injectIframeListeners(key);
 });
 }"""
 
@@ -121,6 +148,8 @@ window.__html5DragAndDrop = function(src, tgt) {
     console.log("Drag and drop results:", results);
 }
 """
+
+EVENT_LISTENER_INJECTED_PAYLOAD = """return !!window.__userEvents;"""
 
 def get_event_recorder_payload(recordable_events: list[str] | None):
     if recordable_events is None:
