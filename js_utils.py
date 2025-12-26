@@ -32,12 +32,19 @@ window.__userEvents = [];
 """ \
 + GET_CSS_SELECTOR_PAYLOAD + \
 """
+const blacklisted_props = [/MOZ_.*/, /DOM_.*/]
+
 function htmlSelectorSanitize(ob){
     let x = {};
     if(Array.isArray(ob))
       x = [];
     
     for (let k in ob){
+      if(blacklisted_props.some(rx => rx.test(k))){
+        console.log('Skipping blacklisted prop', k);
+        continue;
+      }
+
       console.log('Sanitizing key', k, ob[k]);
       if(ob[k] === null || ob[k] === undefined)
         x[k] = ob[k];

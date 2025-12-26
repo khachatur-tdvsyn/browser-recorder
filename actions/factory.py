@@ -9,6 +9,10 @@ from .mouse import (
     DragAction,
     DropAction
 )
+from .keyboard import (
+    KeyDownAction,
+    KeyUpAction
+)
 
 class ActionFactory:
     avaiable_actions = {
@@ -20,6 +24,8 @@ class ActionFactory:
         "onwheel": WheelAction,
         "ondragstart": DragAction,
         "ondrop": DropAction,
+        "onkeydown": KeyDownAction,
+        "onkeyup": KeyUpAction,
     }
 
     keep_params_actions = {
