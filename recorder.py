@@ -9,6 +9,7 @@ class BoundaryRecorder:
         self.html = None
         self.saved_boundaries = {}
         self._is_into_iframe = False
+        self._current_url = None
 
     def _insert_mousemove_event_recorder(self):
         self.driver.execute_script(
@@ -61,11 +62,13 @@ class BoundaryRecorder:
             'html',
         ])
 
-        if self.html_selector != html_selector:
+        if self.html_selector != html_selector or self._current_url != self.driver.current_url:
             self.switch_to_iframe(parentIframes)
             self._insert_mousemove_event_recorder()
             self.html = self.driver.find_element(By.CSS_SELECTOR, 'html')
+            
             self.html_selector = html_selector
+            self._current_url = self.driver.current_url
 
             actions = ActionChains(self.driver)
             actions.move_to_element_with_offset(self.html, 1, 0)

@@ -24,6 +24,11 @@ from .clipboard import (
     PasteAction
 )
 
+from .window import (
+    ResizeAction,
+    LoadAction
+)
+
 class ActionFactory:
     avaiable_actions = {
         "onclick": ClickAction,
@@ -41,6 +46,9 @@ class ActionFactory:
         "oncut": CutAction,
         "oncopy": CopyAction,
         "onpaste": PasteAction,
+
+        "onresize": ResizeAction,
+        "onload": LoadAction,
     }
 
     @classmethod

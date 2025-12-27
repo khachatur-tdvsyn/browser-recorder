@@ -67,12 +67,16 @@ function record(type, e, parentIframes = []) {
     
     console.log('Sanitizing event', e, ob);
     let y = htmlSelectorSanitize(ob);
+
     window.__userEvents.push({
         type, 
         event: y, 
         target: window.__getCssSelectorShort(e.target),
         parentIframes,
         time: Date.now(),
+        location: document.location.href,
+        width: window.outerWidth,
+        height: window.outerHeight,
     });
 }
 
