@@ -17,6 +17,7 @@ from js_utils import  (
     get_event_recorder_payload,
 )
 from actions import ActionFactory
+from recorder import BoundaryRecorder
 
 
 class RecordableBrowser(ABC):
@@ -71,6 +72,8 @@ class RecordableFirefoxBrowser(RecordableBrowser):
         print('Browser opened')
         if(self.start_url):
             self.browser.get(self.start_url)
+        
+        self.boundary_recorder = BoundaryRecorder(self.browser)
 
 
     def save_output(self):
@@ -120,7 +123,7 @@ class RecordableFirefoxBrowser(RecordableBrowser):
         with open(self.record_input) as f:
             execution_record = json.load(f)
         
-        actions = ActionFactory.create_action(self.browser, execution_record)
+        actions = ActionFactory.create_action(self.browser, execution_record, self.boundary_recorder)
         
         start = time.time()
         print('Starting execution of recorded events...')

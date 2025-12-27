@@ -10,6 +10,8 @@ from selenium.common.exceptions import (
     StaleElementReferenceException
 )
 
+from recorder import BoundaryRecorder
+
 
 class BaseAction(ABC):
     def __init__(self, driver: WebDriver, params: dict):
@@ -42,9 +44,10 @@ class UnknownAction(BaseAction):
         print(f"Executing unknown action of type: {self.params['type']} (doing nothing)")
 
 class MouseBaseAction(BaseAction, ABC):
-    def __init__(self, driver, params):
+    def __init__(self, driver, params, boundary_recorder: BoundaryRecorder):
         super().__init__(driver, params)
         self.html = self._get_element("html")
+        self.boundary_recorder = boundary_recorder
 
         # Temporary install mouse tracker
         self.driver.execute_script(
@@ -62,13 +65,19 @@ class MouseBaseAction(BaseAction, ABC):
         })();
         """
         )
-        self.boundaries = self.driver.execute_script(
-            """return {x: window.innerWidth, y: window.innerHeight};"""
+        
+    
+    def update_boundaries(self):
+        self.boundary_recorder.fix_boundary(
+            self.params.get('parentIframes', [])
         )
+        self.boundaries = self.boundary_recorder.saved_boundaries.copy()
+
         self.normalized_x, self.normalized_y = (
-            self.params["event"]["clientX"] - self.boundaries["x"] / 2,
-            self.params["event"]["clientY"] - self.boundaries["y"] / 2,
+            self.params["event"]["clientX"] - self.boundaries["x"],
+            self.params["event"]["clientY"] - self.boundaries["y"],
         )
+        print('Normalized coordinates', self.normalized_x, self.normalized_y)
 
     def get_mouse_position(self):
         return self.driver.execute_script("""return window.__mousePos""")
@@ -81,8 +90,12 @@ class MouseBaseAction(BaseAction, ABC):
 
     def _create_move_action(self):
         action = ActionChains(self.driver)
-        self._refresh_html_element()
+        # self._refresh_html_element()
         action.move_to_element_with_offset(
-            self.html, self.normalized_x, self.normalized_y
+            self.boundary_recorder.html, self.normalized_x, self.normalized_y
         )
         return action
+    
+    def execute(self):
+        self.update_boundaries()
+        ...

@@ -1,4 +1,8 @@
-from .base import BaseAction, UnknownAction
+from .base import (
+    BaseAction, 
+    MouseBaseAction, 
+    UnknownAction
+)
 from .mouse import (
     ClickAction,
     MouseDownAction,
@@ -39,25 +43,17 @@ class ActionFactory:
         "onpaste": PasteAction,
     }
 
-    keep_params_actions = {
-        DragAction
-    }
-
     @classmethod
-    def create_action(cls, driver, params) -> list[BaseAction]:
+    def create_action(cls, driver, params, boundary_recorder = None) -> list[BaseAction]:
         action_objects = []
-        param_arr = []
+        
         for p in params:
-            Action = cls.avaiable_actions.get(p.get("type"))
-            if Action:
-                if Action in cls.keep_params_actions:
-                    param_arr.append(p)
-                else:
-                    action_params = param_arr + [p] if len(param_arr) > 0 else p
-                    param_arr = []
-                    
-                    action_objects.append(Action(driver, action_params))
-            else:
-                action_objects.append(UnknownAction(driver, p))
+            Action = cls.avaiable_actions.get(p.get("type"), UnknownAction)
+            
+            additional_args = {}
+            if boundary_recorder and issubclass(Action, MouseBaseAction):
+                additional_args["boundary_recorder"] = boundary_recorder
+
+            action_objects.append(Action(driver, p, **additional_args))
 
         return action_objects

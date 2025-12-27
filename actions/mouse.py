@@ -34,10 +34,11 @@ class DoubleClickAction(BaseAction):
 class MouseDownAction(MouseBaseAction):
     def execute(self):
         super().execute()
+        self.boundary_recorder.switch_to_iframe(self.params.get('parentIframes'))
         el = self._get_element(self.params["target"])
         print("Executing MouseDownAction on", self.params["target"])
         action = self._create_move_action()
-
+        print(self.get_mouse_position())
         # Mouse button: 0 = left, 1 = middle, 2 = right
         button_type = self.params["event"].get("button", 0)
         if button_type == 2:
@@ -46,17 +47,19 @@ class MouseDownAction(MouseBaseAction):
             action.click_and_hold()
         action.perform()
         print(self.get_mouse_position())
+        self.boundary_recorder.unswitch_from_iframe()
 
 
 class MouseUpAction(MouseBaseAction):
     def execute(self):
         super().execute()
+        self.boundary_recorder.switch_to_iframe(self.params.get('parentIframes'))
         print(self.get_mouse_position())
         action = self._create_move_action()
 
         action.release()
         action.perform()
-
+        self.boundary_recorder.unswitch_from_iframe()
         print(self.get_mouse_position())
 
 
