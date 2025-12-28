@@ -78,8 +78,8 @@ class RecordableFirefoxBrowser(RecordableBrowser):
 
     def save_output(self):
         if self.record_output:
+            print('Saving output into', self.record_output)
             with open(self.record_output, "w+") as f:
-                print(self.record_buffer)
                 json.dump(self.record_buffer, f)
         else:
             print(self.record_buffer)
@@ -118,6 +118,15 @@ class RecordableFirefoxBrowser(RecordableBrowser):
     
     def stop_recording(self):
         super().stop_recording()
+
+    def _wait_until_right_location(self, params, sleep_interval=0.05):
+        while True:
+            if (
+                self.browser.current_url == params.get('location') or \
+                params.get('type') == 'onload'
+            ):
+                break
+            time.sleep(sleep_interval)
     
     def execute_record(self):
         with open(self.record_input) as f:
@@ -128,6 +137,7 @@ class RecordableFirefoxBrowser(RecordableBrowser):
         start = time.time()
         print('Starting execution of recorded events...')
         for a in actions:
+            self._wait_until_right_location(a.params)
             a.execute()
         
         end = time.time()

@@ -10,36 +10,36 @@ class BaseShortener(ABC):
 
 class MouseActionsShortener(BaseShortener):
 
+    def _find_previous_event_index(self, start_index, type = None, skip = 0):
+        last = skip
+        for i in range(start_index, -1, -1):
+            if not type or self.captured_events[i].get('type') == type:
+                last -= 1
+            
+            if last < 0:
+                return i
+
     def _enumerate_odd_clicks(self):
-        click_events = []
-        removable_events = []
+        removable_events = set()
 
         for i, e in enumerate(self.captured_events):
             e_type = e.get('type')
-            if (
-                len(click_events) == 0 and e_type == 'onmousedown' or \
-                len(click_events) == 1 and e_type == 'onmouseup' or \
-                len(click_events) == 2 and e_type == 'onclick'
-            ):
-                print('Detected', e_type, 'at', e.get('time'), i)
-                click_events.append({
-                    'index': i,
-                    'event': e,
-                    'timestamp': e.get('time')
-                })
-            
-            if len(click_events) == 3:
-                delta = click_events[1]['timestamp'] - click_events[0]['timestamp']
-
+            if e_type == 'onclick':
+                delta = self.captured_events[i - 1]['time'] - self.captured_events[i - 2]['time']
                 if abs(delta) <= 100:
-                    print('Delta', delta, 'it is click')
-                    removable_events.append(click_events[1]['index'])
-                    removable_events.append(click_events[0]['index'])
+                    removable_events.add(self._find_previous_event_index(i, 'onmouseup'))
+                    removable_events.add(self._find_previous_event_index(i, 'onmousedown'))
                 else:
-                    print('Delta', delta, 'it is long move')
-                    removable_events.append(click_events[2]['index'])
-                
-                click_events.clear()
+                    removable_events.add(i)
+            elif e_type == 'ondblclick':
+                removable_events |= {
+                    self._find_previous_event_index(i, 'onclick'),
+                    self._find_previous_event_index(i, 'onmouseup'),
+                    self._find_previous_event_index(i, 'onmousedown'),
+                    self._find_previous_event_index(i, 'onclick', 1),
+                    self._find_previous_event_index(i, 'onmouseup', 1),
+                    self._find_previous_event_index(i, 'onmousedown', 1),
+                }
         
         return removable_events
 
@@ -48,3 +48,19 @@ class MouseActionsShortener(BaseShortener):
         print(removable_events)
 
         return [c for i, c in enumerate(self.captured_events) if i not in removable_events]
+
+class WheelActionsShortener(BaseShortener):
+    def shorten(self):
+        start, end = -1, -1
+        summarDeltaY = 0
+        for i, e in enumerate(self.captured_events):
+            if e['type'] == 'onwheel':
+                if start == -1:
+                    start = i
+                summarDeltaY += e['event']['deltaY']
+                end = i
+        
+        self.captured_events[end]['event']['deltaY'] = summarDeltaY
+        self.captured_events[end]['duration'] = self.captured_events[end]['time'] - self.captured_events[start]['time']
+
+        return [e for i, e in enumerate(self.captured_events) if not (start <= i < end)]

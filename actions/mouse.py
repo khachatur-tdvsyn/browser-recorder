@@ -1,3 +1,5 @@
+import time
+
 from .base import BaseAction, MouseBaseAction
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
@@ -17,6 +19,7 @@ class ClickAction(BaseAction):
             except ElementNotInteractableException:
                 action = ActionChains(self.driver)
                 action.move_to_element(el).click().perform()
+            
 
 
 class DoubleClickAction(BaseAction):
@@ -79,17 +82,29 @@ class MouseMoveAction(MouseBaseAction):
 
 
 class WheelAction(BaseAction):
+    def _slow_execute(self):
+        delta_y = self.params["event"].get("deltaY", 0)
+        duration = self.params.get('duration', 40)
+
+        # Interval in milliseconds
+        scrolled_delta, interval = 0, 40
+
+        while scrolled_delta < delta_y:
+            scroll_amount = delta_y / (duration / interval)
+            action = ActionChains(self.driver)
+
+            action.scroll_by_amount(0, int(scroll_amount))
+            action.perform()
+            scrolled_delta += scroll_amount
+            time.sleep(interval / 1000)
+
     def execute(self):
         print(
             "Executing WheelAction by",
             self.params["event"]["deltaY"],
         )
 
-        action = ActionChains(self.driver)
-        delta_y = self.params["event"].get("deltaY", 0)
-        scroll_amount = int(delta_y)  # Adjust scroll sensitivity as needed
-        action.scroll_by_amount(0, scroll_amount)
-        action.perform()
+        self._slow_execute()
 
 class DragAction(BaseAction):
     def execute(self):

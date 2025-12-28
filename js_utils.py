@@ -41,11 +41,9 @@ function htmlSelectorSanitize(ob){
     
     for (let k in ob){
       if(blacklisted_props.some(rx => rx.test(k))){
-        console.log('Skipping blacklisted prop', k);
         continue;
       }
 
-      // console.log('Sanitizing key', k, ob[k]);
       if(ob[k] === null || ob[k] === undefined)
         x[k] = ob[k];
       else if(typeof ob[k] === 'object' && (ob[k].tagName || ob[k].nodeName))
@@ -65,7 +63,6 @@ function record(type, e, parentIframes = []) {
         ob[k] = e[k]
     })       
     
-    console.log('Sanitizing event', e, ob);
     let y = htmlSelectorSanitize(ob);
 
     window.__userEvents.push({
@@ -105,7 +102,6 @@ function injectIframeListeners(key, parentIframes = []){
 }
 
 ///EVENTS///.forEach(key => {
-    console.log('Injecting event', key);
     window.addEventListener(key.slice(2), e => {
         record(key, e);
     }, true)
