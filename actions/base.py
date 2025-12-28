@@ -11,25 +11,30 @@ from selenium.common.exceptions import (
 )
 
 from recorder import BoundaryRecorder
-
+from browser.context import FrameContextDriver
 
 class BaseAction(ABC):
     def __init__(self, driver: WebDriver, params: dict):
         super().__init__()
         self.driver = driver
         self.params = params
+        
+        self.frame_context = FrameContextDriver(self.driver, self.params.get('parentIframes'))
 
     @abstractmethod
     def execute(self): ...
 
     def _get_element(self, target, timeout=10) -> WebElement:
-        wait = WebDriverWait(self.driver, timeout)
-        el = wait.until(
-            lambda d: d.find_element(
-                by=By.CSS_SELECTOR, value=target
+        with self.frame_context:
+            print("Find element", target, self.params.get("parentIframes")[-1:])
+            wait = WebDriverWait(self.driver, timeout)
+            el = wait.until(
+                lambda d: d.find_element(
+                    by=By.CSS_SELECTOR, value=target
+                )
             )
-        )
-        print("Found element:", target, self.params.get("parentIframes")[-1:])
+            print("Found element:", target, self.params.get("parentIframes")[-1:])
+
         return el
 
     def __str__(self):
@@ -46,7 +51,6 @@ class UnknownAction(BaseAction):
 class MouseBaseAction(BaseAction, ABC):
     def __init__(self, driver, params, boundary_recorder: BoundaryRecorder):
         super().__init__(driver, params)
-        self.html = self._get_element("html")
         self.boundary_recorder = boundary_recorder
 
         # Temporary install mouse tracker
@@ -82,15 +86,8 @@ class MouseBaseAction(BaseAction, ABC):
     def get_mouse_position(self):
         return self.driver.execute_script("""return window.__mousePos""")
 
-    def _refresh_html_element(self):
-        try:
-            self.html.is_enabled()
-        except StaleElementReferenceException:
-            self.html = self._get_element('html')
-
     def _create_move_action(self):
         action = ActionChains(self.driver)
-        # self._refresh_html_element()
         action.move_to_element_with_offset(
             self.boundary_recorder.html, self.normalized_x, self.normalized_y
         )

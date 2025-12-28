@@ -2,6 +2,8 @@ from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 
+from browser.context import FrameContextDriver
+
 class BoundaryRecorder:
     def __init__(self, driver: WebDriver):
         self.driver = driver
@@ -43,18 +45,6 @@ class BoundaryRecorder:
         })();
         """
         )
-    
-    def switch_to_iframe(self, parentIframes):
-        if not self._is_into_iframe:
-            for i in parentIframes:
-                iframe = self.driver.find_element(By.CSS_SELECTOR, i)
-                self.driver.switch_to.frame(iframe)
-            self._is_into_iframe = True
-    
-    def unswitch_from_iframe(self):
-        if self._is_into_iframe:
-            self.driver.switch_to.default_content()
-            self._is_into_iframe = False
 
     def fix_boundary(self, parentIframes):
         html_selector = ' > '.join([
@@ -63,21 +53,19 @@ class BoundaryRecorder:
         ])
 
         if self.html_selector != html_selector or self._current_url != self.driver.current_url:
-            self.switch_to_iframe(parentIframes)
-            self._insert_mousemove_event_recorder()
-            self.html = self.driver.find_element(By.CSS_SELECTOR, 'html')
-            
-            self.html_selector = html_selector
-            self._current_url = self.driver.current_url
+            with FrameContextDriver(self.driver, parentIframes):
+                self._insert_mousemove_event_recorder()
+                self.html = self.driver.find_element(By.CSS_SELECTOR, 'html')
+                
+                self.html_selector = html_selector
+                self._current_url = self.driver.current_url
 
-            actions = ActionChains(self.driver)
-            actions.move_to_element_with_offset(self.html, 1, 0)
-            actions.move_to_element_with_offset(self.html, -1, 0)
-            actions.perform()
+                actions = ActionChains(self.driver)
+                actions.move_to_element_with_offset(self.html, 1, 0)
+                actions.move_to_element_with_offset(self.html, -1, 0)
+                actions.perform()
 
-            self.saved_boundaries = self.driver.execute_script("""return window.__mousePos""")
-            print('Setting up new boundary', self.saved_boundaries)
-            self.unswitch_from_iframe()
-
+                self.saved_boundaries = self.driver.execute_script("""return window.__mousePos""")
+                print('Setting up new boundary', self.saved_boundaries)
 
 

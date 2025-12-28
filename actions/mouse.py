@@ -10,71 +10,72 @@ class ClickAction(BaseAction):
     def execute(self):
         el = self._get_element(self.params["target"])
 
-        print("Clicking on", self.params["target"])
-        try:
-            el.click()
-        except ElementNotInteractableException:
-            action = ActionChains(self.driver)
-            action.move_to_element(el).click().perform()
+        with self.frame_context:
+            print("Clicking on", self.params["target"])
+            try:
+                el.click()
+            except ElementNotInteractableException:
+                action = ActionChains(self.driver)
+                action.move_to_element(el).click().perform()
 
 
 class DoubleClickAction(BaseAction):
     def execute(self):
         el = self._get_element(self.params["target"])
 
-        print("Double clicking on", self.params["target"])
-        try:
-            action = ActionChains(self.driver)
-            action.double_click(el)
-        except ElementNotInteractableException:
-            action.move_to_element(el).double_click()
-        finally:
-            action.perform()
+        with self.frame_context:
+            print("Double clicking on", self.params["target"])
+            try:
+                action = ActionChains(self.driver)
+                action.double_click(el)
+            except ElementNotInteractableException:
+                action.move_to_element(el).double_click()
+            finally:
+                action.perform()
 
 class MouseDownAction(MouseBaseAction):
     def execute(self):
         super().execute()
-        self.boundary_recorder.switch_to_iframe(self.params.get('parentIframes'))
-        el = self._get_element(self.params["target"])
         print("Executing MouseDownAction on", self.params["target"])
-        action = self._create_move_action()
-        print(self.get_mouse_position())
-        # Mouse button: 0 = left, 1 = middle, 2 = right
-        button_type = self.params["event"].get("button", 0)
-        if button_type == 2:
-            action.context_click()
-        else:
-            action.click_and_hold()
-        action.perform()
-        print(self.get_mouse_position())
-        self.boundary_recorder.unswitch_from_iframe()
+        with self.frame_context:
+            action = self._create_move_action()
+            print(self.get_mouse_position())
+            # Mouse button: 0 = left, 1 = middle, 2 = right
+            button_type = self.params["event"].get("button", 0)
+            if button_type == 2:
+                action.context_click()
+            else:
+                action.click_and_hold()
+            action.perform()
+            print(self.get_mouse_position())
 
 
 class MouseUpAction(MouseBaseAction):
     def execute(self):
         super().execute()
-        self.boundary_recorder.switch_to_iframe(self.params.get('parentIframes'))
-        print(self.get_mouse_position())
-        action = self._create_move_action()
+        with self.frame_context:
+            print("Executing MouseUpAction on", self.params["target"])
+            action = self._create_move_action()
 
-        action.release()
-        action.perform()
-        self.boundary_recorder.unswitch_from_iframe()
+            action.release()
+            action.perform()
+        
         print(self.get_mouse_position())
 
 
 class MouseMoveAction(MouseBaseAction):
     def execute(self):
         super().execute()
-        print(
-            "Executing MouseMoveAction at",
-            self.params["event"]["clientX"],
-            self.params["event"]["clientY"],
-        )
+        with self.frame_context:
+            print(
+                "Executing MouseMoveAction at",
+                self.params["event"]["clientX"],
+                self.params["event"]["clientY"],
+            )
 
-        action = self._create_move_action()
-        action.perform()
-        print(self.get_mouse_position())
+            action = self._create_move_action()
+            action.perform()
+            print(self.get_mouse_position())
 
 
 class WheelAction(BaseAction):

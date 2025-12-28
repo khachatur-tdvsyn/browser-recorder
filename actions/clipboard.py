@@ -30,5 +30,7 @@ class PasteAction(BaseAction):
         clipboard_text = self.driver.execute_script("return navigator.clipboard.readText();")
         target_selector = self.params['target']
         print(f"Pasting text into {target_selector}: {clipboard_text}")
-        target_element = self.driver.find_element(by=By.CSS_SELECTOR, value=target_selector)
-        target_element.send_keys(clipboard_text)
+
+        target_element = self._get_element(target_selector)
+        with self.frame_context:
+            target_element.send_keys(clipboard_text)
