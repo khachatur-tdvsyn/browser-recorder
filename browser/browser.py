@@ -17,7 +17,7 @@ from js_utils import  (
     get_event_recorder_payload,
 )
 from actions import ActionFactory
-from recorder import BoundaryRecorder
+from recorder.recorder import BoundaryRecorder
 
 
 class RecordableBrowser(ABC):
@@ -100,7 +100,7 @@ class RecordableFirefoxBrowser(RecordableBrowser):
                     print('Re-inject event listeners')
                     self.browser.execute_script(self.js_payload)
             
-                events = self.browser.execute_script(EVENT_LIST_PAYLOAD)
+                events = self.browser.execute_script(EVENT_LIST_PAYLOAD) or []
                 self.record_buffer += events or []
 
                 for e in events:

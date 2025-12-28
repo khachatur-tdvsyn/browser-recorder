@@ -10,7 +10,7 @@ from selenium.common.exceptions import (
     StaleElementReferenceException
 )
 
-from recorder import BoundaryRecorder
+from recorder.recorder import BoundaryRecorder
 from browser.context import FrameContextDriver
 
 class BaseAction(ABC):

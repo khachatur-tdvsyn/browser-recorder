@@ -105,9 +105,10 @@ function injectIframeListeners(key, parentIframes = []){
 }
 
 ///EVENTS///.forEach(key => {
+    console.log('Injecting event', key);
     window.addEventListener(key.slice(2), e => {
         record(key, e);
-    })
+    }, true)
     injectIframeListeners(key);
 });
 }"""
