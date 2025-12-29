@@ -16,27 +16,7 @@ A Python-based tool for recording and replaying browser interactions using Selen
 - **Action Replay**: Executes recorded events with precise positioning and timing
 - **Firefox Browser**: Full support for Firefox WebDriver automation
 
-## Project Structure
 
-```
-browser_recorder/
-├── actions/              # Action execution classes
-│   ├── base.py          # Base action classes
-│   ├── mouse.py         # Mouse event actions (click, drag, etc.)
-│   ├── keyboard.py      # Keyboard event actions
-│   ├── clipboard.py     # Clipboard event actions
-│   ├── window.py        # Window event actions
-│   └── factory.py       # Factory pattern for action creation
-├── browser/             # Browser automation and recording
-│   ├── browser.py       # Main browser recorder class
-│   └── context.py       # Frame context management
-├── recorder/            # Event recording logic
-│   ├── recorder.py      # Event capturing and boundary calculation
-│   └── shortener.py     # Event normalization and optimization
-├── js_utils.py          # JavaScript payloads for event injection
-├── main.py              # Example usage script
-└── README.md            # This file
-```
 
 ## Requirements
 
@@ -57,33 +37,56 @@ pip install selenium
 
 ## Usage
 
-### Basic Example
+### Running the Application
 
-```python
-from browser.browser import RecordableFirefoxBrowser
-
-# Initialize the recorder
-url = "https://google.com"
-events = ["onclick", "ondblclick", "onmousedown", "onmouseup", "onkeydown", "onkeyup", "onwheel", "oncut", "oncopy", "onpaste", "onresize", "onload", "onbeforeunload"]
-
-recorder = RecordableFirefoxBrowser(
-    url=url,
-    records=events,
-    record_output="events_output.json",
-    record_input="events_output.json"
-)
-
-# Start recording (browser window will open)
-recorder.start()
+```bash
+python main.py --url "https://example.com"
 ```
 
-### Playback Mode
+### Command Line Arguments
 
-When `record=False`, the recorder will:
-1. Open the browser
-2. Load recorded events from the input file
-3. Replay all recorded actions automatically
-4. Close the browser
+- `--url, -u`: Target URL to open in the browser
+- `--input-file, -i`: Path to input file (default: events_output.json)
+- `--output-file, -o`: Path to output file (default: events_output.json)
+- `--execute, -e`: Execute recorded interactions on startup
+- `--record, -r`: Start recording immediately on startup
+- `--verbose, -V`: Enable verbose logging output
+- `--allowed-events`: List of allowed event names to record
+
+### Interactive Commands
+
+Once the application is running, you can use the following commands in the interactive console:
+
+| Command | Aliases | Description | Usage |
+|---------|---------|-------------|-------|
+| **record** | `r` | Start recording user interactions in browser | `record [output_file]` |
+| **play** | `pl` | Resume playing recorded interactions | `play` |
+| **pause** | `p` | Pause recording or playback | `pause` |
+| **stop** | `s` | Stop recording user interactions | `stop` |
+| **execute** | `e` | Execute recorded interactions from a file | `execute [input_file]` |
+| **help** | `h`, `?` | Show all available commands and their usage | `help` |
+| **exit** | `quit`, `close` | Close the program | `exit` |
+
+### Example Workflow
+
+```bash
+# Start the application
+python main.py --url "https://example.com"
+
+# In the interactive console:
+Browser recorder > record output.json
+# ... Interact with the browser ...
+Browser recorder > stop
+
+# Execute the recorded interactions
+Browser recorder > execute output.json
+
+# Get help on available commands
+Browser recorder > help
+
+# Exit the application
+Browser recorder > exit
+```
 
 ## Limitations
 
@@ -131,6 +134,28 @@ events_to_capture = [
 - `record_output`: Path to save recorded events (JSON format)
 - `record_input`: Path to load recorded events for playback
 
+## Adding New Commands
+
+To add new commands to the interactive interface:
+
+1. Create a new command class in `browser/command.py` inheriting from `Command`
+2. Define `names` (tuple of command aliases), `description`, and `usage` attributes
+3. Implement the `execute()` method
+4. Register the command in `main.py` by adding it to the CommandProcessor's command list
+
+### Example Command
+
+```python
+class MyCommand(Command):
+    names = ("mycommand", "mc")
+    description = "Description of what this command does"
+    usage = "mycommand [argument]"
+
+    def execute(self, argument=None):
+        # Your implementation here
+        pass
+```
+
 ## Development Notes
 
 ### Event Storage Format
@@ -150,14 +175,6 @@ Events are stored in JSON format with the following structure:
   ...
 ]
 ```
-
-### Extending the Project
-
-To add new event types:
-
-1. Create a new action class in `actions/` directory inheriting from `BaseAction` or `MouseBaseAction`
-2. Register it in `ActionFactory.avaiable_actions`
-3. Add event capturing logic in `js_utils.py` if needed
 
 ## Future Enhancements
 
