@@ -88,11 +88,10 @@ class WheelAction(BaseAction):
 
         # Interval in milliseconds
         scrolled_delta, interval = 0, 40
-
-        while scrolled_delta < delta_y:
-            scroll_amount = delta_y / (duration / interval)
+        scroll_amount = delta_y / (duration / interval)
+        print(f'{scroll_amount=}', int(scroll_amount))
+        while abs(scrolled_delta) < abs(delta_y):
             action = ActionChains(self.driver)
-
             action.scroll_by_amount(0, int(scroll_amount))
             action.perform()
             scrolled_delta += scroll_amount
