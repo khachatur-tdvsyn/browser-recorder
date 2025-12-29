@@ -10,8 +10,6 @@ from .mouse import (
     MouseUpAction,
     DoubleClickAction,
     WheelAction,
-    DragAction,
-    DropAction
 )
 from .keyboard import (
     KeyDownAction,
@@ -37,8 +35,6 @@ class ActionFactory:
         "onmousemove": MouseMoveAction,
         "ondblclick": DoubleClickAction,
         "onwheel": WheelAction,
-        "ondragstart": DragAction,
-        "ondrop": DropAction,
 
         "onkeydown": KeyDownAction,
         "onkeyup": KeyUpAction,

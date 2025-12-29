@@ -14,6 +14,10 @@ from selenium.webdriver.common.actions.pointer_input import PointerInput
 from recorder.recorder import BoundaryRecorder
 from browser.context import FrameContextDriver
 
+from logging import getLogger
+
+logger = getLogger(__name__)
+
 class BaseAction(ABC):
     def __init__(self, driver: WebDriver, params: dict):
         super().__init__()
@@ -27,14 +31,14 @@ class BaseAction(ABC):
 
     def _get_element(self, target, timeout=10) -> WebElement:
         with self.frame_context:
-            print("Find element", target, self.params.get("parentIframes")[-1:])
+            logger.debug(f'Find element {target=} - parent iframes {self.params.get("parentIframes")[-1:]}')
             wait = WebDriverWait(self.driver, timeout)
             el = wait.until(
                 lambda d: d.find_element(
                     by=By.CSS_SELECTOR, value=target
                 )
             )
-            print("Found element:", target, self.params.get("parentIframes")[-1:])
+            logger.debug(f'Found element:", {target=} - parent iframes {self.params.get("parentIframes")[-1:]}')
 
         return el
 
@@ -47,7 +51,7 @@ class BaseAction(ABC):
 
 class UnknownAction(BaseAction):
     def execute(self):
-        print(f"Executing unknown action of type: {self.params['type']} (doing nothing)")
+        logger.warning(f"Executing unknown action of type: {self.params['type']} (doing nothing)")
 
 class MouseBaseAction(BaseAction, ABC):
     def __init__(self, driver, params, boundary_recorder: BoundaryRecorder):
@@ -70,19 +74,6 @@ class MouseBaseAction(BaseAction, ABC):
         })();
         """
         )
-        
-    
-    def update_boundaries(self):
-        self.boundary_recorder.fix_boundary(
-            self.params.get('parentIframes', [])
-        )
-        self.boundaries = self.boundary_recorder.saved_boundaries.copy()
-
-        self.normalized_x, self.normalized_y = (
-            self.params["event"]["clientX"] - self.boundaries["x"],
-            self.params["event"]["clientY"] - self.boundaries["y"],
-        )
-        print('Normalized coordinates', self.normalized_x, self.normalized_y)
 
     def get_mouse_position(self):
         return self.driver.execute_script("""return window.__mousePos""")
@@ -93,5 +84,4 @@ class MouseBaseAction(BaseAction, ABC):
         return action
     
     def execute(self):
-        self.update_boundaries()
         ...

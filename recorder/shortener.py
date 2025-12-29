@@ -88,8 +88,6 @@ class ClickActionsShortener(BaseShortener):
 
     def shorten(self):
         removable_events = self._enumerate_odd_clicks()
-        print(removable_events)
-
         return [
             c for i, c in enumerate(self.captured_events) if i not in removable_events
         ]
@@ -132,7 +130,6 @@ class MouseMoveLinearShortener(MovementShortener):
                 self.captured_events[end]["time"] - self.captured_events[start]["time"]
             )
 
-        print(ranges)
         return [
             e
             for i, e in enumerate(self.captured_events)
@@ -159,6 +156,5 @@ class ClipboardActionsShortener(BaseShortener):
             )):
                 removing_items.add(i)
         
-        print(f'Clipboard {removing_items=}')
         return [e for i, e in enumerate(self.captured_events) if i not in removing_items]
 

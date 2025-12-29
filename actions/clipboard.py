@@ -3,10 +3,13 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 
+from logging import getLogger
+logger = getLogger(__name__)
+
 class CutAction(BaseAction):
     def execute(self):
         target_selector = self.params['target']
-        print(f"Cutting text from {target_selector}")
+        logger.debug(f"Cutting text from {target_selector}")
 
         action = ActionChains(self.driver)
         action.key_down(Keys.CONTROL)
@@ -17,7 +20,7 @@ class CutAction(BaseAction):
 class CopyAction(BaseAction):
     def execute(self):
         target_selector = self.params['target']
-        print(f"Copying text from {target_selector}")
+        logger.debug(f"Copying text from {target_selector}")
         
         action = ActionChains(self.driver)
         action.key_down(Keys.LEFT_CONTROL)
@@ -29,7 +32,7 @@ class PasteAction(BaseAction):
     def execute(self):
         clipboard_text = self.driver.execute_script("return navigator.clipboard.readText();")
         target_selector = self.params['target']
-        print(f"Pasting text into {target_selector}: {clipboard_text}")
+        logger.debug(f"Pasting text into {target_selector}: {clipboard_text}")
 
         target_element = self._get_element(target_selector)
         with self.frame_context:

@@ -6,12 +6,16 @@ from browser.command import (
     PlayCommand,
     PauseCommand,
     StopCommand,
-    ExecuteCommand
+    ExecuteCommand,
+    HelpCommand,
+    ExitCommand,
 )
 
 from argparse import ArgumentParser
+import logging
 
-records = ["onclick", "ondblclick", "onmousedown", "onmouseup", "onkeydown", "onkeyup", "onwheel", "oncut", "oncopy", "onpaste", "onresize", "onload", "onbeforeunload"]
+
+records = ["onclick", "ondblclick", "onmousedown", "onmouseup", "onkeydown", "onkeyup", "onwheel", "oncut", "oncopy", "onpaste", "onresize", "onload"]
 
 def parse_arguments():
     parser = ArgumentParser("Browser Recorder", description="A Python-based tool for recording and replaying browser interactions using Selenium. This project captures user events (clicks, keyboard input, mouse movements, etc.) from web browsers and can replay them automatically.")
@@ -61,48 +65,39 @@ def parse_arguments():
         help="List of allowed event names"
     )
 
-    parser.add_argument(
-        "--timeout", "-t",
-        type=float,
-        default=30,
-        help="Timeout in seconds (default: 30)"
-    )
-
     return parser.parse_args()
 
-record = False
-#url = "https://wikipedia.org"
-url = "https://hy.wikipedia.org/wiki/%D5%80%D5%A1%D5%B5%D5%A1%D5%BD%D5%BF%D5%A1%D5%B6"
-# url = "https://www.w3schools.com/js/tryit.asp?filename=tryjs_whereto_url_relative"
-# url = "https://google.com"
+if __name__ == '__main__':
+    arguments = parse_arguments()
 
-arguments = parse_arguments()
+    logging_level = logging.DEBUG if arguments.verbose else logging.INFO
 
+    logging.basicConfig(level=logging_level, format="[%(levelname)s]: %(message)s /%(asctime)s / %(name)s/",
+            datefmt="%Y-%m-%d %H:%M:%S",)
 
+    recordable = RecordableFirefoxBrowser(
+        start_url=arguments.url, 
+        recordable_events=arguments.allowed_events, 
+        record_output=arguments.input_file, 
+        record_input=arguments.input_file,
+        records_storage=JSONEventStorage()
+    )
 
-recordable = RecordableFirefoxBrowser(
-    start_url=arguments.url, 
-    recordable_events=arguments.allowed_events, 
-    record_output=arguments.input_file, 
-    record_input=arguments.input_file,
-    records_storage=JSONEventStorage()
-)
+    processor = CommandProcessor([
+        RecordCommand(recordable),
+        PlayCommand(recordable),
+        PauseCommand(recordable),
+        StopCommand(recordable),
+        ExecuteCommand(recordable),
+        HelpCommand(recordable),
+        ExitCommand(recordable)
+    ])
 
-processor = CommandProcessor([
-    RecordCommand(recordable),
-    PlayCommand(recordable),
-    PauseCommand(recordable),
-    StopCommand(recordable),
-    ExecuteCommand(recordable),
-])
+    if arguments.execute:
+        recordable.execute_record()
+    elif arguments.record:
+        recordable.start_recording()
 
-if arguments.execute:
-    recordable.execute_record()
-elif arguments.record:
-    recordable.start_recording()
-
-while True:
-    text = input("Browser recorder > ")
-    if text in ("exit", "quit"):
-        break
-    processor.process(text)
+    while True:
+        text = input("Browser recorder > ")
+        processor.process(text)

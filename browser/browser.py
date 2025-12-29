@@ -22,6 +22,9 @@ from actions import ActionFactory
 from recorder.recorder import BoundaryRecorder
 from storage.base import BaseEventStorage
 
+from logging import getLogger
+logger = getLogger(__name__)
+
 
 class RecordableBrowser(ABC):
     type: str
@@ -75,9 +78,9 @@ class RecordableFirefoxBrowser(RecordableBrowser):
         self.is_playing = False
 
     def init_browser(self):
-        print('Opening browser, please wait...')
+        logger.info('Opening browser, please wait...')
         self.browser = webdriver.Firefox(options=self.browser_options)
-        print('Browser opened')
+        logger.info('Browser opened')
         if(self.start_url):
             self.browser.get(self.start_url)
         
@@ -86,24 +89,24 @@ class RecordableFirefoxBrowser(RecordableBrowser):
 
     def save_output(self):
         if self.record_output:
-            print('Saving output into', self.record_output)
+            logger.info(f'Saving output into {self.record_output}')
             self.records_storage.save(self.record_output)
         else:
-            print(self.records_storage.records)
+            logger.info(self.records_storage.records)
 
     def _record(self):
         self.browser.execute_script(self.js_payload)
-        print('Executing initial JS')
+        logger.info('Executing initial JS')
 
         self.title = self.browser.title
         while self.is_recording:
             try:
                 if self.title != self.browser.title:
-                    print('Re-execute script')
+                    logger.info('Re-execute script')
                     self.browser.execute_script(self.js_payload)
                     self.title = self.browser.title
                 elif not self.browser.execute_script(EVENT_LISTENER_INJECTED_PAYLOAD):
-                    print('Re-inject event listeners')
+                    logger.info('Re-inject event listeners')
                     self.browser.execute_script(self.js_payload)
             
                 events = self.browser.execute_script(EVENT_LIST_PAYLOAD) or []
@@ -111,14 +114,14 @@ class RecordableFirefoxBrowser(RecordableBrowser):
                     self.records_storage.add_many_events(events or [])
 
                     for e in events:
-                        print(e.get('time'), ':', e.get('type'))
+                        logger.info(f'{e.get("time")} : {e.get("type")}')
 
                 time.sleep(0.125)
             except NoSuchWindowException:
-                print("Window closed. Stop recording")
+                logger.info("Window closed. Stop recording")
                 break
             except InvalidSessionIdException as e:
-                print('Something is wrong with WebDriver session :|', e)
+                logger.error('Something is wrong with WebDriver session :|', e)
                 break
         
         self.save_output()
@@ -147,7 +150,7 @@ class RecordableFirefoxBrowser(RecordableBrowser):
             time_left -= sleep_interval
             time.sleep(sleep_interval)
 
-        print('Timeout for current url: Going to current url')
+        logger.info('Timeout for current url: Going to current url')
         self.browser.get(params.get('location'))
     
     def execute_record(self):
@@ -157,16 +160,16 @@ class RecordableFirefoxBrowser(RecordableBrowser):
         actions = ActionFactory.create_action(self.browser, execution_record, self.boundary_recorder)
         
         start = time.time()
-        print('Starting execution of recorded events...')
+        logger.info('Starting execution of recorded events...')
         for a in actions:
             try:
                 self._wait_until_right_location(a.params)
                 a.execute()
             except Exception as e:
-                print('Some exception happened', e)
+                logger.warning('Some exception happened', e)
                 res = input('Go to next action: ')
                 if not res:
                     break
         
         end = time.time()
-        print(f'Execution finished in {end - start:.3f} seconds.')
+        logger.info(f'Execution finished in {end - start:.3f} seconds.')
