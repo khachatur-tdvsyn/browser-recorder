@@ -5,6 +5,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Optional
 
+from threading import Thread
+
 from selenium import webdriver
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.firefox.options import Options
@@ -65,6 +67,29 @@ class RecordableFirefoxBrowser(RecordableBrowser):
         self.init_browser()
 
         self.record_buffer = []
+        
+        self.is_recording = False
+        self.is_playing = False
+    
+    def start(self):
+        while True:
+            line = input('Browser recorder > ')
+            arguments = line.partition(' ')
+
+            if arguments[0] == 'exit':
+                break
+            elif arguments[0] in ('record', 'r'):
+                self.record_output = self.record_output if not arguments[2] else arguments[2]
+                self.start_recording()
+            elif arguments[0] in ('play', 'pl'):
+                self.is_playing = True
+            elif arguments[0] in ('pause', 'pu'):
+                self.is_playing = False
+            elif arguments[0] in ('stop', 's'):
+                self.stop_recording()
+            elif arguments[0] in ('execute', 'e'):
+                self.record_input = self.record_input if not arguments[2] else arguments[2]
+                self.execute_record()
 
     def init_browser(self):
         print('Opening browser, please wait...')
@@ -84,8 +109,7 @@ class RecordableFirefoxBrowser(RecordableBrowser):
         else:
             print(self.record_buffer)
 
-    def start_recording(self):
-        super().start_recording()
+    def _record(self):
         self.browser.execute_script(self.js_payload)
         print('Executing initial JS')
 
@@ -101,10 +125,11 @@ class RecordableFirefoxBrowser(RecordableBrowser):
                     self.browser.execute_script(self.js_payload)
             
                 events = self.browser.execute_script(EVENT_LIST_PAYLOAD) or []
-                self.record_buffer += events or []
+                if self.is_playing:
+                    self.record_buffer += events or []
 
-                for e in events:
-                    print(e.get('time'), ':', e.get('type'))
+                    for e in events:
+                        print(e.get('time'), ':', e.get('type'))
 
                 time.sleep(0.125)
             except NoSuchWindowException:
@@ -115,6 +140,14 @@ class RecordableFirefoxBrowser(RecordableBrowser):
                 break
         
         self.save_output()
+
+    def start_recording(self):
+        if not self.is_recording:
+            super().start_recording()
+            self.is_playing = True
+            t = Thread(target=self._record, daemon=True)
+            t.start()
+        
     
     def stop_recording(self):
         super().stop_recording()
