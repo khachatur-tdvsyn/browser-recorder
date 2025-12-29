@@ -8,6 +8,8 @@ from selenium.webdriver.remote.webelement import WebElement
 from selenium.common.exceptions import (
     MoveTargetOutOfBoundsException
 )
+from selenium.webdriver.common.actions.action_builder import ActionBuilder
+from selenium.webdriver.common.actions.pointer_input import PointerInput
 
 from recorder.recorder import BoundaryRecorder
 from browser.context import FrameContextDriver
@@ -87,9 +89,7 @@ class MouseBaseAction(BaseAction, ABC):
 
     def _create_move_action(self):
         action = ActionChains(self.driver)
-        action.move_to_element_with_offset(
-            self.boundary_recorder.html, self.normalized_x, self.normalized_y
-        )
+        action.w3c_actions.pointer_action.move_to_location(x = self.params['event']['clientX'], y = self.params['event']['clientY'])
         return action
     
     def execute(self):

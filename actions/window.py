@@ -1,4 +1,4 @@
-from .base import BaseAction
+from .base import BaseAction, MouseBaseAction
 
 class ResizeAction(BaseAction):
     def execute(self):

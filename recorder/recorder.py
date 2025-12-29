@@ -52,6 +52,8 @@ class BoundaryRecorder:
             'html',
         ])
 
+        print('HTML selector', html_selector, self._current_url, self.driver.current_url)
+
         if self.html_selector != html_selector or self._current_url != self.driver.current_url:
             with FrameContextDriver(self.driver, parentIframes):
                 self._insert_mousemove_event_recorder()

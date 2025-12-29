@@ -20,12 +20,14 @@ from js_utils import  (
 )
 from actions import ActionFactory
 from recorder.recorder import BoundaryRecorder
+from storage.base import BaseEventStorage
 
 
 class RecordableBrowser(ABC):
     type: str
     executable_path: Optional[Path | str] = None
     is_recording: bool = False
+    is_playing: bool = False
     record_output: Optional[Path | str] = None
     record_input: Optional[Path | str] = None
     recordable_events: Optional[list[str]] = None
@@ -54,6 +56,7 @@ class RecordableFirefoxBrowser(RecordableBrowser):
         record_output=None,
         executable_path=None,
         options: Options | None = None,
+        records_storage: BaseEventStorage | None = None
     ):
         self.record_input = record_input
         self.start_url = start_url
@@ -66,30 +69,10 @@ class RecordableFirefoxBrowser(RecordableBrowser):
         self.js_payload = get_event_recorder_payload(self.recordable_events)
         self.init_browser()
 
-        self.record_buffer = []
+        self.records_storage = records_storage
         
         self.is_recording = False
         self.is_playing = False
-    
-    def start(self):
-        while True:
-            line = input('Browser recorder > ')
-            arguments = line.partition(' ')
-
-            if arguments[0] == 'exit':
-                break
-            elif arguments[0] in ('record', 'r'):
-                self.record_output = self.record_output if not arguments[2] else arguments[2]
-                self.start_recording()
-            elif arguments[0] in ('play', 'pl'):
-                self.is_playing = True
-            elif arguments[0] in ('pause', 'pu'):
-                self.is_playing = False
-            elif arguments[0] in ('stop', 's'):
-                self.stop_recording()
-            elif arguments[0] in ('execute', 'e'):
-                self.record_input = self.record_input if not arguments[2] else arguments[2]
-                self.execute_record()
 
     def init_browser(self):
         print('Opening browser, please wait...')
@@ -104,10 +87,9 @@ class RecordableFirefoxBrowser(RecordableBrowser):
     def save_output(self):
         if self.record_output:
             print('Saving output into', self.record_output)
-            with open(self.record_output, "w+") as f:
-                json.dump(self.record_buffer, f)
+            self.records_storage.save(self.record_output)
         else:
-            print(self.record_buffer)
+            print(self.records_storage.records)
 
     def _record(self):
         self.browser.execute_script(self.js_payload)
@@ -126,7 +108,7 @@ class RecordableFirefoxBrowser(RecordableBrowser):
             
                 events = self.browser.execute_script(EVENT_LIST_PAYLOAD) or []
                 if self.is_playing:
-                    self.record_buffer += events or []
+                    self.records_storage.add_many_events(events or [])
 
                     for e in events:
                         print(e.get('time'), ':', e.get('type'))
@@ -152,14 +134,21 @@ class RecordableFirefoxBrowser(RecordableBrowser):
     def stop_recording(self):
         super().stop_recording()
 
-    def _wait_until_right_location(self, params, sleep_interval=0.05):
-        while True:
+    def _wait_until_right_location(self, params, sleep_interval=0.05, timeout=5):
+        time_left = timeout
+        while time_left >= 0:
             if (
                 self.browser.current_url == params.get('location') or \
+                params.get('type') == 'onbeforeload' or \
                 params.get('type') == 'onload'
             ):
-                break
+                return
+
+            time_left -= sleep_interval
             time.sleep(sleep_interval)
+
+        print('Timeout for current url: Going to current url')
+        self.browser.get(params.get('location'))
     
     def execute_record(self):
         with open(self.record_input) as f:
@@ -170,8 +159,14 @@ class RecordableFirefoxBrowser(RecordableBrowser):
         start = time.time()
         print('Starting execution of recorded events...')
         for a in actions:
-            self._wait_until_right_location(a.params)
-            a.execute()
+            try:
+                self._wait_until_right_location(a.params)
+                a.execute()
+            except Exception as e:
+                print('Some exception happened', e)
+                res = input('Go to next action: ')
+                if not res:
+                    break
         
         end = time.time()
         print(f'Execution finished in {end - start:.3f} seconds.')
