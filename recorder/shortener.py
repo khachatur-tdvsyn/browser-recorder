@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+from actions.keyboard import KeyboardBaseAction
 
 class BaseShortener(ABC):
     def __init__(self, captured_events: list[dict]):
@@ -137,3 +138,27 @@ class MouseMoveLinearShortener(MovementShortener):
             for i, e in enumerate(self.captured_events)
             if not any([start <= i < end for start, end in ranges])
         ]
+    
+class ClipboardActionsShortener(BaseShortener):
+    def shorten(self):
+        removing_items = set()
+        for i, e in enumerate(self.captured_events):
+            e_type = e.get('type')
+            if any((
+                e_type == 'oncopy' and
+                self.captured_events[i - 1]['event'].get('code') == 'KeyC' and
+                self.captured_events[i - 2]['event'].get('code') in ['ControlLeft', 'ControlRight'],
+
+                e_type == 'onpaste' and
+                self.captured_events[i - 1]['event'].get('code') == 'KeyV' and
+                self.captured_events[i - 2]['event'].get('code') in ['ControlLeft', 'ControlRight'],
+
+                e_type == 'oncut' and
+                self.captured_events[i - 1]['event'].get('code') == 'KeyX' and
+                self.captured_events[i - 2]['event'].get('code') in ['ControlLeft', 'ControlRight']
+            )):
+                removing_items.add(i)
+        
+        print(f'Clipboard {removing_items=}')
+        return [e for i, e in enumerate(self.captured_events) if i not in removing_items]
+

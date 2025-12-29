@@ -3,10 +3,12 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
 
 class KeyboardBaseAction(BaseAction):
-    def _is_special_key(self, key: str) -> bool:
+    @classmethod
+    def _is_special_key(cls, key: str) -> bool:
         return key.upper() in Keys.__dict__.keys()
     
-    def _get_special_key(self, key: str):
+    @classmethod
+    def _get_special_key(cls, key: str):
         return getattr(Keys, key.upper(), None)
 
 class KeyDownAction(KeyboardBaseAction):
