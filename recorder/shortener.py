@@ -9,8 +9,42 @@ class BaseShortener(ABC):
     def shorten(self): ...
 
 
-class ClickActionsShortener(BaseShortener):
+class MovementShortener(BaseShortener, ABC):
+    def _find_ranges(self, type, negativeTrigger):
+        ranges = []
+        start, end = -1, -1
+        is_negative = False
 
+        for i, e in enumerate(self.captured_events):
+            e_type = e.get("type")
+
+            if e_type == type:
+                neg = negativeTrigger(e)
+                if start == -1:
+                    start = i
+                    is_negative = neg
+
+                end = i
+
+                # Detects wheel scrolling direction change (ex. from up to down)
+                if is_negative != neg:
+                    ranges.append((start, end))
+                    is_negative = neg
+                    start, end = -1, -1
+
+            elif (start, end) != (-1, -1):
+                ranges.append((start, end))
+                start, end = -1, -1
+                is_negative = False
+
+        if end != -1:
+            ranges.append((start, end))
+
+        return ranges
+
+
+
+class ClickActionsShortener(BaseShortener):
     def _find_previous_event_index(self, start_index, type=None, skip=0):
         last = skip
         for i in range(start_index, -1, -1):
@@ -60,42 +94,9 @@ class ClickActionsShortener(BaseShortener):
         ]
 
 
-class WheelActionsShortener(BaseShortener):
-    def _find_ranges(self):
-        ranges = []
-        start, end = -1, -1
-        is_negative = False
-
-        for i, e in enumerate(self.captured_events):
-            e_type = e.get("type")
-
-            if e_type == "onwheel":
-                neg = e["event"]["deltaY"] < 0
-                if start == -1:
-                    start = i
-                    is_negative = neg
-
-                end = i
-
-                # Detects wheel scrolling direction change (ex. from up to down)
-                if is_negative != neg:
-                    ranges.append((start, end))
-                    is_negative = neg
-                    start, end = -1, -1
-
-            elif (start, end) != (-1, -1):
-                ranges.append((start, end))
-                start, end = -1, -1
-                is_negative = False
-
-        if end != -1:
-            ranges.append((start, end))
-
-        return ranges
-
+class WheelActionsShortener(MovementShortener):
     def shorten(self):
-        time = 0
-        ranges = self._find_ranges()
+        ranges = self._find_ranges('onwheel', lambda e: e["event"]["deltaY"] < 0)
 
         for r in ranges:
             start, end = r
@@ -105,6 +106,27 @@ class WheelActionsShortener(BaseShortener):
                 summarDeltaY += self.captured_events[i]["event"]["deltaY"]
 
             self.captured_events[end]["event"]["deltaY"] = summarDeltaY
+            self.captured_events[end]["duration"] = (
+                self.captured_events[end]["time"] - self.captured_events[start]["time"]
+            )
+
+        print(ranges)
+        return [
+            e
+            for i, e in enumerate(self.captured_events)
+            if not any([start <= i < end for start, end in ranges])
+        ]
+
+class MouseMoveLinearShortener(MovementShortener):
+    def shorten(self):
+        ranges = self._find_ranges('onmousemove', lambda e: False)
+
+        for r in ranges:
+            start, end = r
+            self.captured_events[end]['event'] |= {
+                'startClientX': self.captured_events[start]['event']['clientX'],
+                'startClientY': self.captured_events[start]['event']['clientY']
+            }
             self.captured_events[end]["duration"] = (
                 self.captured_events[end]["time"] - self.captured_events[start]["time"]
             )

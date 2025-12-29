@@ -67,6 +67,36 @@ class MouseUpAction(MouseBaseAction):
 
 
 class MouseMoveAction(MouseBaseAction):
+    def _get_position(self, start, end, theresold):
+        return (end-start) * theresold + start
+
+    def _slow_execute(self):
+        startX, startY = (
+            self.params['event']['startClientX'] - self.boundaries['x'], 
+            self.params['event']['startClientY'] - self.boundaries['y'],
+        )
+        endX, endY = self.normalized_x, self.normalized_y
+        duration = self.params.get('duration', 40)
+        theresold = 0
+
+        # Interval in milliseconds
+        interval = 50
+        while theresold <= 1:
+            t = time.time()
+            action = ActionChains(self.driver)
+
+            currX, currY = self._get_position(startX, endX, theresold), self._get_position(startY, endY, theresold)
+            #print('Moving to', currX, currY, 'with theresold', theresold)
+            action.move_to_element_with_offset(
+                self.boundary_recorder.html,
+                int(currX),
+                int(currY)
+            )
+            action.perform()
+            delta = int((time.time() - t) * 1000)
+            theresold += (interval + delta) / duration
+            time.sleep(max(interval - delta, 0) / 1000)
+
     def execute(self):
         super().execute()
         with self.frame_context:
@@ -75,10 +105,15 @@ class MouseMoveAction(MouseBaseAction):
                 self.params["event"]["clientX"],
                 self.params["event"]["clientY"],
             )
+            self._slow_execute()
+            # action = self._create_move_action()
+            # action.perform()
+            # # Temp sleep using duration
+            # if self.params.get('duration'):
+            #     print('Sleeping after move', self.params['duration'] / 1000)
+            #     time.sleep(self.params['duration'] / 1000)
 
-            action = self._create_move_action()
-            action.perform()
-            print(self.get_mouse_position())
+            # print(self.get_mouse_position())
 
 
 class WheelAction(BaseAction):
