@@ -1,5 +1,6 @@
 import time
 import json
+from pathlib import Path
 
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -61,7 +62,8 @@ class RecordableFirefoxBrowser(RecordableBrowser):
         executable_path=None,
         browser_type=BrowserType.CHROME,
         options = dict(),
-        records_storage: BaseEventStorage | None = None
+        records_storage: BaseEventStorage | None = None,
+        browser_path: Path | None = None
     ):
         self.record_input = record_input
         self.start_url = start_url
@@ -71,6 +73,7 @@ class RecordableFirefoxBrowser(RecordableBrowser):
         self.browser_options = options
         self.recordable_events = recordable_events
         self.browser_type = browser_type
+        self.browser_path = browser_path
 
         self.js_payload = get_event_recorder_payload(self.recordable_events)
         self.init_browser()
@@ -82,7 +85,7 @@ class RecordableFirefoxBrowser(RecordableBrowser):
 
     def init_browser(self):
         logger.info('Opening browser, please wait...')
-        self.browser = WebDriverFactory.create(self.browser_type, **self.browser_options)
+        self.browser = WebDriverFactory.create(self.browser_type, self.browser_path, **self.browser_options)
         logger.info('Browser opened')
         if(self.start_url):
             self.browser.get(self.start_url)

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from browser.browser import RecordableFirefoxBrowser
 from storage.json import JSONEventStorage
 from browser.command import (
@@ -75,6 +77,12 @@ def parse_arguments():
         metavar="{" + ", ".join(b.value for b in BrowserType) + "}"
     )
 
+    parser.add_argument(
+        '--browser-path',
+        type=Path,
+        help="Path to executable of browser."
+    )
+
     return parser.parse_args()
 
 if __name__ == '__main__':
@@ -92,6 +100,7 @@ if __name__ == '__main__':
         record_input=arguments.input_file,
         browser_type=arguments.browser_type,
         options={},
+        browser_path=arguments.browser_path,
         records_storage=JSONEventStorage()
     )
 
