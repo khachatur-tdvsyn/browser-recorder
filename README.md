@@ -14,7 +14,7 @@ A Python-based tool for recording and replaying browser interactions using Selen
 - **Boundary Calculation**: Automatically calculates element positions relative to the viewport, accounting for iframe offsets
 - **Event Storage**: Saves recorded events to JSON files for later replay or analysis
 - **Action Replay**: Executes recorded events with precise positioning and timing
-- **Firefox Browser**: Full support for Firefox WebDriver automation
+- **Multiple Browser Support**: Support for Chrome and Firefox browsers
 
 
 
@@ -22,8 +22,8 @@ A Python-based tool for recording and replaying browser interactions using Selen
 
 - Python 3.8 or higher
 - Selenium WebDriver 4.0+
-- Firefox browser
-- geckodriver (Firefox WebDriver executable)
+- Browser of choice (Chrome, Firefox, or both)
+- Corresponding WebDriver executable (chromedriver for Chrome, geckodriver for Firefox)
 
 ### Installation
 
@@ -31,8 +31,9 @@ A Python-based tool for recording and replaying browser interactions using Selen
 # Install required Python packages
 pip install selenium
 
-# Download geckodriver from https://github.com/mozilla/geckodriver/releases
-# Add geckodriver to your system PATH or specify the path in the code
+# For Chrome: Download chromedriver from https://chromedriver.chromium.org/
+# For Firefox: Download geckodriver from https://github.com/mozilla/geckodriver/releases
+# Add the driver(s) to your system PATH or specify the path via --browser-path
 ```
 
 ## Usage
@@ -52,6 +53,8 @@ python main.py --url "https://example.com"
 - `--record, -r`: Start recording immediately on startup
 - `--verbose, -V`: Enable verbose logging output
 - `--allowed-events`: List of allowed event names to record
+- `--browser-type, -b`: Browser to use (chrome or firefox, default: chrome)
+- `--browser-path`: Path to the browser executable
 
 ### Interactive Commands
 
