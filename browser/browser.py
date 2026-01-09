@@ -21,6 +21,7 @@ from js_utils import  (
 from actions import ActionFactory
 from recorder.recorder import BoundaryRecorder
 from storage.base import BaseEventStorage
+from .factory import WebDriverFactory, BrowserType
 
 from logging import getLogger
 logger = getLogger(__name__)
@@ -58,7 +59,8 @@ class RecordableFirefoxBrowser(RecordableBrowser):
         record_input=None,
         record_output=None,
         executable_path=None,
-        options: Options | None = None,
+        browser_type=BrowserType.CHROME,
+        options = dict(),
         records_storage: BaseEventStorage | None = None
     ):
         self.record_input = record_input
@@ -68,6 +70,7 @@ class RecordableFirefoxBrowser(RecordableBrowser):
         self.browser = None
         self.browser_options = options
         self.recordable_events = recordable_events
+        self.browser_type = browser_type
 
         self.js_payload = get_event_recorder_payload(self.recordable_events)
         self.init_browser()
@@ -79,7 +82,7 @@ class RecordableFirefoxBrowser(RecordableBrowser):
 
     def init_browser(self):
         logger.info('Opening browser, please wait...')
-        self.browser = webdriver.Firefox(options=self.browser_options)
+        self.browser = WebDriverFactory.create(self.browser_type, **self.browser_options)
         logger.info('Browser opened')
         if(self.start_url):
             self.browser.get(self.start_url)

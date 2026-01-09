@@ -10,6 +10,7 @@ from browser.command import (
     HelpCommand,
     ExitCommand,
 )
+from browser.factory import BrowserType
 
 from argparse import ArgumentParser
 import logging
@@ -65,6 +66,15 @@ def parse_arguments():
         help="List of allowed event names"
     )
 
+    parser.add_argument(
+        '--browser-type', '-b',
+        type=BrowserType,
+        choices=list(BrowserType),
+        default=BrowserType.CHROME,
+        help="Browser to run tests on",
+        metavar="{" + ", ".join(b.value for b in BrowserType) + "}"
+    )
+
     return parser.parse_args()
 
 if __name__ == '__main__':
@@ -80,6 +90,8 @@ if __name__ == '__main__':
         recordable_events=arguments.allowed_events, 
         record_output=arguments.input_file, 
         record_input=arguments.input_file,
+        browser_type=arguments.browser_type,
+        options={},
         records_storage=JSONEventStorage()
     )
 
