@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from browser.browser import RecordableFirefoxBrowser
+from browser.browser import RecordableCommonBrowser
 from storage.json import JSONEventStorage
 from browser.command import (
     CommandProcessor,
@@ -93,7 +93,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging_level, format="[%(levelname)s]: %(message)s /%(asctime)s / %(name)s/",
             datefmt="%Y-%m-%d %H:%M:%S",)
 
-    recordable = RecordableFirefoxBrowser(
+    recordable = RecordableCommonBrowser(
         start_url=arguments.url, 
         recordable_events=arguments.allowed_events, 
         record_output=arguments.input_file, 

@@ -28,7 +28,7 @@ from logging import getLogger
 logger = getLogger(__name__)
 
 
-class RecordableBrowser(ABC):
+class RecordableBaseBrowser(ABC):
     type: str
     executable_path: Optional[Path | str] = None
     is_recording: bool = False
@@ -52,7 +52,7 @@ class RecordableBrowser(ABC):
     def execute_record(self): ...
 
 
-class RecordableFirefoxBrowser(RecordableBrowser):
+class RecordableCommonBrowser(RecordableBaseBrowser):
     def __init__(
         self,
         start_url: Optional[str]=None,
@@ -69,7 +69,7 @@ class RecordableFirefoxBrowser(RecordableBrowser):
         self.start_url = start_url
         self.record_output = record_output
         self.executable_path = executable_path
-        self.browser = None
+        self.driver = None
         self.browser_options = options
         self.recordable_events = recordable_events
         self.browser_type = browser_type
@@ -85,12 +85,12 @@ class RecordableFirefoxBrowser(RecordableBrowser):
 
     def init_browser(self):
         logger.info('Opening browser, please wait...')
-        self.browser = WebDriverFactory.create(self.browser_type, self.browser_path, **self.browser_options)
+        self.driver = WebDriverFactory.create(self.browser_type, self.browser_path, **self.browser_options)
         logger.info('Browser opened')
         if(self.start_url):
-            self.browser.get(self.start_url)
+            self.driver.get(self.start_url)
         
-        self.boundary_recorder = BoundaryRecorder(self.browser)
+        self.boundary_recorder = BoundaryRecorder(self.driver)
 
 
     def save_output(self):
@@ -101,21 +101,21 @@ class RecordableFirefoxBrowser(RecordableBrowser):
             logger.info(self.records_storage.records)
 
     def _record(self):
-        self.browser.execute_script(self.js_payload)
+        self.driver.execute_script(self.js_payload)
         logger.info('Executing initial JS')
 
-        self.title = self.browser.title
+        self.title = self.driver.title
         while self.is_recording:
             try:
-                if self.title != self.browser.title:
+                if self.title != self.driver.title:
                     logger.info('Re-execute script')
-                    self.browser.execute_script(self.js_payload)
-                    self.title = self.browser.title
-                elif not self.browser.execute_script(EVENT_LISTENER_INJECTED_PAYLOAD):
+                    self.driver.execute_script(self.js_payload)
+                    self.title = self.driver.title
+                elif not self.driver.execute_script(EVENT_LISTENER_INJECTED_PAYLOAD):
                     logger.info('Re-inject event listeners')
-                    self.browser.execute_script(self.js_payload)
+                    self.driver.execute_script(self.js_payload)
             
-                events = self.browser.execute_script(EVENT_LIST_PAYLOAD) or []
+                events = self.driver.execute_script(EVENT_LIST_PAYLOAD) or []
                 if self.is_playing:
                     self.records_storage.add_many_events(events or [])
 
@@ -147,7 +147,7 @@ class RecordableFirefoxBrowser(RecordableBrowser):
         time_left = timeout
         while time_left >= 0:
             if (
-                self.browser.current_url == params.get('location') or \
+                self.driver.current_url == params.get('location') or \
                 params.get('type') == 'onbeforeload' or \
                 params.get('type') == 'onload'
             ):
@@ -157,13 +157,13 @@ class RecordableFirefoxBrowser(RecordableBrowser):
             time.sleep(sleep_interval)
 
         logger.info('Timeout for current url: Going to current url')
-        self.browser.get(params.get('location'))
+        self.driver.get(params.get('location'))
     
     def execute_record(self):
         with open(self.record_input) as f:
             execution_record = json.load(f)
         
-        actions = ActionFactory.create_action(self.browser, execution_record, self.boundary_recorder)
+        actions = ActionFactory.create_action(self.driver, execution_record, self.boundary_recorder)
         
         start = time.time()
         logger.info('Starting execution of recorded events...')

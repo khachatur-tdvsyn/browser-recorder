@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
-from .browser import RecordableBrowser
+from .browser import RecordableBaseBrowser
 
 class Command(ABC):
     names: tuple[str, ...]
     description: str
     usage: str
 
-    def __init__(self, recorder: RecordableBrowser):
+    def __init__(self, recorder: RecordableBaseBrowser):
         self.recorder = recorder
 
     @abstractmethod
@@ -81,7 +81,7 @@ class HelpCommand(Command):
     description = "Show all available commands and their usage"
     usage = "help"
 
-    def __init__(self, recorder: RecordableBrowser, command_processor=None):
+    def __init__(self, recorder: RecordableBaseBrowser, command_processor=None):
         super().__init__(recorder)
         self.command_processor = command_processor
 
