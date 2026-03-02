@@ -88,10 +88,21 @@ def parse_arguments():
 if __name__ == '__main__':
     arguments = parse_arguments()
 
-    logging_level = logging.DEBUG if arguments.verbose else logging.INFO
+    is_verbose = arguments.verbose
+    logging_level = logging.DEBUG if is_verbose else logging.INFO
 
-    logging.basicConfig(level=logging_level, format="[%(levelname)s]: %(message)s /%(asctime)s / %(name)s/",
-            datefmt="%Y-%m-%d %H:%M:%S",)
+    if is_verbose:
+        logging.basicConfig(
+            level=logging_level, 
+            format="[%(levelname)s]: %(asctime)s / %(message)s / %(name)s/",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+    else:
+        logging.basicConfig(
+            level=logging_level, 
+            format="[%(levelname)s]: %(message)s / %(asctime)s /",
+            datefmt="%H:%M:%S",
+        )
 
     recordable = RecordableCommonBrowser(
         start_url=arguments.url, 

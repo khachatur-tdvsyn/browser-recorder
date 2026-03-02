@@ -103,6 +103,7 @@ class RecordableCommonBrowser(RecordableBaseBrowser):
     def _record(self):
         self.driver.execute_script(self.js_payload)
         logger.info('Executing initial JS')
+        logger.warning('The events inside some iframes isn\'t recording due to security reasons. These iframes will have TRANSPARENCY.')
 
         self.title = self.driver.title
         while self.is_recording:

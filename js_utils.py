@@ -97,6 +97,9 @@ function injectIframeListeners(key, parentIframes = []){
             })
         } catch (err) {
             console.error('Could not attach event listener to iframe:', key, iframes[i], err);
+
+            iframes[i].style.pointerEvents = 'none';
+            iframes[i].style.opacity = 0.75;
         }
     }
 }
